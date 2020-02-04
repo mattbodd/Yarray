@@ -7,10 +7,19 @@
 #define RED    "\033[0;31m"
 #define NC     "\033[0m"
 
+// Macro definitions
+#define max(a,b) ({__typeof__ (a) _a = (a);     \
+      __typeof__ (b) _b = (b);                  \
+      _a > _b ? _a : _b; })
+
+#define min(a,b) ({__typeof__ (a) _a = (a);     \
+      __typeof__ (b) _b = (b);                  \
+      _a < _b ? _a : _b; })
+
 // Possible primative data types of `yarr.data`
 typedef enum {INT, FLOAT, LONG, DOUBLE} dataType;
-// Possible scalar operators
-typedef enum {ADD, SUB, MULT, DIV} scalar_op;
+// Possible pairwise operators
+typedef enum {ADD, SUB, MULT, DIV, MIN, MAX} pairwise_op;
 
 // Forward declaration of yarr type
 typedef struct yarr yarr;
@@ -278,17 +287,17 @@ void resize_C_array(yarr *y) {}
  * TODO: matrixMult()
  * DONE: max() & min()
  * TODO: transpose()
- * DONE: primative scalar operations (+, -, *, /)
+ * DONE: primative pairwise operations (+, -, *, /, max, min)
  */
 
 // TODO: Determine if casting should happen after operation is applied or
 // before?
-yarr *apply_scalar_op(yarr *y1, yarr *y2, scalar_op op) {
+yarr *apply_pairwise_op(yarr *y1, yarr *y2, pairwise_op op) {
   // Ensure that shapes are consistent
   // Start by ensuring number of dimensions is consistent
   if (y1->dims != y2->dims) {
     #ifdef DEBUG
-    printf("%sInconsistent number of dimensions for scalar operation%s\n",
+    printf("%sInconsistent number of dimensions for pairwise operation%s\n",
            RED, NC);
     #endif
     return NULL;
@@ -298,7 +307,7 @@ yarr *apply_scalar_op(yarr *y1, yarr *y2, scalar_op op) {
   // Ensure the total number of elements is consistent
   if ((y2->strides[0] * y2->widths[0]) != total_elems) {
     #ifdef DEBUG
-    printf("%sInconsistent number of total elements for scalar operation%s\n",
+    printf("%sInconsistent number of total elements for pairwise operation%s\n",
            RED, NC);
     #endif
     return NULL;
@@ -315,7 +324,7 @@ yarr *apply_scalar_op(yarr *y1, yarr *y2, scalar_op op) {
   for (int depth = 0; depth < y1->dims; depth++) {
     if (y1->widths[depth] != y2->widths[depth]) {
       #ifdef DEBUG
-      printf("%sInconsistent numer of widths at depth %d for scalar operation%s\n",
+      printf("%sInconsistent numer of widths at depth %d for pairwise operation%s\n",
              RED, depth, NC);
       #endif
       // Free partially allocated `res`
@@ -340,7 +349,7 @@ yarr *apply_scalar_op(yarr *y1, yarr *y2, scalar_op op) {
   // Initialize data
   allocate_contiguous(res, total_elems);
   
-  // Perform primative operation
+  // Perform pairwise operation
   for (int i = 0; i < total_elems; i++) {
     switch (res->tag) {
     case DOUBLE:
@@ -353,7 +362,13 @@ yarr *apply_scalar_op(yarr *y1, yarr *y2, scalar_op op) {
       else if (op == MULT) {
         res->data.ddata[i] = get_double(y1,i) * get_double(y2,i);
       }
-      else { res->data.ddata[i] = get_double(y1, i), get_double(y2, i); }
+      else if (op == DIV) {
+        res->data.ddata[i] = get_double(y1, i), get_double(y2, i);
+      }
+      else if (op == MAX) {
+        res->data.ddata[i] = max(get_double(y1, i), get_double(y2, i));
+      }
+      else { res->data.ddata[i] = min(get_double(y1, i), get_double(y2, i)); }
       break;
     case LONG:
       if (op == ADD) {
@@ -365,7 +380,13 @@ yarr *apply_scalar_op(yarr *y1, yarr *y2, scalar_op op) {
       else if (op == MULT) {
         res->data.ldata[i] = get_long(y1,i) * get_long(y2,i);
       }
-      else { res->data.ldata[i] = get_long(y1, i) / get_long(y2, i); }
+      else if (op == DIV) {
+        res->data.ldata[i] = get_long(y1, i) / get_long(y2, i);
+      }
+      else if (op == MAX) {
+        res->data.ldata[i] = max(get_long(y1, i), get_long(y2, i));
+      }
+      else { res->data.ldata[i] = min(get_long(y1, i), get_long(y2, i)); }
       break;
     case FLOAT:
       if (op == ADD) {
@@ -377,7 +398,13 @@ yarr *apply_scalar_op(yarr *y1, yarr *y2, scalar_op op) {
       else if (op == MULT) {
         res->data.fdata[i] = get_float(y1,i) * get_float(y2,i);
       }
-      else { res->data.fdata[i] = get_float(y1, i) / get_float(y2, i); }
+      else if (op == DIV) {
+        res->data.fdata[i] = get_float(y1, i) / get_float(y2, i);
+      }
+      else if (op == MAX) {
+        res->data.fdata[i] = max(get_float(y1, i), get_float(y2, i));
+      }
+      else { res->data.fdata[i] = min(get_float(y1, i), get_float(y2, i)); }
       break;
     case INT:
       if (op == ADD) {
@@ -389,7 +416,13 @@ yarr *apply_scalar_op(yarr *y1, yarr *y2, scalar_op op) {
       else if (op == MULT) {
         res->data.idata[i] = get_int(y1,i) * get_int(y2,i);
       }
-      else { res->data.idata[i] = get_int(y1, i) / get_int(y2, i); }
+      else if (op == DIV) {
+        res->data.idata[i] = get_int(y1, i) / get_int(y2, i);
+      }
+      else if (op == MAX) {
+        res->data.idata[i] = max(get_int(y1, i), get_int(y2, i));
+      }
+      else { res->data.idata[i] = min(get_int(y1, i), get_int(y2, i)); }
       break;
     }
   }
@@ -575,9 +608,22 @@ int main() {
   // Test out addition
   yarr *augend = C_array(12.0, INT, widths, dims);
   yarr *addend = C_array(3.0, INT, widths, dims);
-  yarr *sum = apply_scalar_op(augend, addend, ADD);
+  yarr *sum = apply_pairwise_op(augend, addend, ADD);
 
   print_C_array(sum);
+  
+  // Test out min and max
+  #ifdef DEBUG
+  printf("%sPrinting out min of two arrays:%s\n", YELLOW, NC);
+  #endif  
+  yarr *mins = apply_pairwise_op(y, addend, MIN);
+  print_C_array(mins);
+
+  #ifdef DEBUG
+  printf("%sPrinting out max of two arrays:%s\n", YELLOW, NC);
+  #endif
+  yarr *maxs = apply_pairwise_op(y, addend, MAX);
+  print_C_array(maxs);
   
   return 0;
 }
