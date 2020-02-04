@@ -292,6 +292,8 @@ void resize_C_array(yarr *y) {}
 
 // TODO: Determine if casting should happen after operation is applied or
 // before?
+// Generate a new `yarr` with same shape as inputs and internal values computed
+// using pairwise operators defined as `op`
 yarr *apply_pairwise_op(yarr *y1, yarr *y2, pairwise_op op) {
   // Ensure that shapes are consistent
   // Start by ensuring number of dimensions is consistent
