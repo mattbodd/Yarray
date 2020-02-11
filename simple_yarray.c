@@ -170,61 +170,143 @@ void allocate_contiguous(yarr *y, int total_elems) {
     #ifdef DEBUG
     printf("Invalid dataType received\n");
     #endif
-    return;    
+    return;
+  }
+}
+
+void realloc_contiguous(yarr *y, int total_elems) {
+  // Allocate space for the contiguous array
+  switch (y->tag) {
+  case INT:
+    {
+      printf("Test\n");
+      int *new_idata = realloc(y->data.idata, total_elems);
+      if (new_idata == NULL) {
+        printf("%sCould not reallocate space for %d ints%s\n",
+               RED, total_elems, NC);
+        break;
+      }
+      y->data.idata = new_idata;
+    
+      break;
+    }
+  case FLOAT:
+    {
+      float *new_fdata = realloc(y->data.fdata, total_elems);
+      if (new_fdata == NULL) {
+        printf("%sCould not reallocate space for %d floats%s\n",
+               RED, total_elems, NC);
+        break;
+      }
+      y->data.fdata = new_fdata;
+    
+      break;
+    }
+  case LONG:
+    {
+      long *new_ldata = realloc(y->data.ldata, total_elems);
+      if (new_ldata == NULL) {
+        printf("%sCould not reallocate space for %d longs%s\n",
+               RED, total_elems, NC);
+        break;
+      }
+      y->data.ldata = new_ldata;
+
+      break;
+    }
+  case DOUBLE:
+    {
+      double *new_ddata = realloc(y->data.ddata, total_elems);
+      if (new_ddata == NULL) {
+        printf("%sCould not reallocate space for %d doubles%s\n",
+               RED, total_elems, NC);
+        break;
+      }
+      y->data.ddata = new_ddata;
+    
+      break;
+    }
+  default:
+    #ifdef DEBUG
+    printf("Invalid dataType received\n");
+    #endif
+    return;
   }
 }
 
 void fill_array(yarr *y, int total_elems, double fill_val) {
-  switch (y->tag) {
-  case INT:
+  if (y->tag == INT) {
     // Initialize int array
     #ifdef DEBUG
     printf("%sInitializing int array with %d elements\n%s",
-	   YELLOW, total_elems, NC);
+           YELLOW, total_elems, NC);
     #endif
+
+    //#pragma scop
     for (int i = 0; i < total_elems; i++) {
-      y->data.idata[i] = (int) fill_val;
+      for (int j = 0; j < 10; j++) {
+             y->data.idata[i] = (int) fill_val;
+      }
     }
+    //#pragma endscop
+    
     #ifdef DEBUG
     printf("%sDone initializing int array with %d elements%s\n",
-	   YELLOW, total_elems, NC);
+           YELLOW, total_elems, NC);
     #endif
     
-    break;
-  case FLOAT:
+  } else if (y->tag == FLOAT) {
     // Initialize float array
+    #ifdef DEBUG
+    printf("%sInitializing float array with %d elements\n%s",
+           YELLOW, total_elems, NC);
+    #endif
+
+    //#pragma scop
     for (int i = 0; i < total_elems; i++) {
       y->data.fdata[i] = (float) fill_val;
     }
+    //#pragma endscop
+    
     #ifdef DEBUG
     printf("%sDone initializing float array with %d elements%s\n",
-	   YELLOW, total_elems, NC);
+           YELLOW, total_elems, NC);
     #endif
-    
-    break;
-  case LONG:
+  } else if (y->tag == LONG) {
     // Initialize long array
+    #ifdef DEBUG
+    printf("%sInitializing float array with %d elements\n%s",
+           YELLOW, total_elems, NC);
+    #endif
+
+    //#pragma scop
     for (int i = 0; i < total_elems; i++) {
       y->data.ldata[i] = (long) fill_val;
     }
+    //#pragma endscop
+    
     #ifdef DEBUG
     printf("%sDone initializing long array with %d elements%s\n",
-	   YELLOW, total_elems, NC);
+           YELLOW, total_elems, NC);
     #endif
-    
-    break;
-  case DOUBLE:
+  } else if (y->tag == DOUBLE) {
     // Initialize double array
+    #ifdef DEBUG
+    printf("%sInitializing int array with %d elements\n%s",
+           YELLOW, total_elems, NC);
+    #endif
+
+    //#pragma scop
     for (int i = 0; i < total_elems; i++) {
       y->data.ddata[i] = fill_val;
     }
+    //#pragma endscop
+    
     #ifdef DEBUG
     printf("%sDone initializing double array with %d elements%s\n",
-	   YELLOW, total_elems, NC);
+           YELLOW, total_elems, NC);
     #endif
-    
-    break;
-  default:
+  } else {
     #ifdef DEBUG
     printf("Invalid dataType received\n");
     #endif
@@ -275,11 +357,76 @@ yarr *C_array(double fill_val, dataType tag, int *widths, int dims) {
   return y;
 }
 
-// TODO: implement resize operation
-// Resizing an array in such a way that it maintains the total number of elements requires
+// Reshaping an array maintains the total number of elements and simply requires
 // readjusting strides
-// Resizing such that the total number of elements changes requires a more involved adjustment
-void resize_C_array(yarr *y) {}
+// This is equivalent to Yorick `reform`
+void reform_C_array(yarr *y, int *new_widths, int new_dims) {
+    // Total number of elements in existing array
+  int total_existing_elems = y->strides[0] * y->widths[0];
+  
+  // Total number of elements in reshaped array is the product of each width
+  int total_proposed_elems = 1;
+  for (int i = 0; i < new_dims; i++) {
+    total_proposed_elems *= new_widths[i];
+  }
+
+  // If the number of elements remains unchanged, simply change strides
+  if (total_existing_elems == total_proposed_elems) {
+    // If the number of dimensions are changing, ensure that widths, strides and
+    // dims are updated appropriately
+    if (y->dims != new_dims) {
+      y->dims = new_dims;
+      // Do not need to free or realloc `y->widths` as `y->widths` was set equal
+      // to a pointer that was allocated elsewhere
+      
+      // Try to make use of previously allocated memory
+      int *new_strides = realloc(y->strides, new_dims);
+      if (new_strides == NULL) {
+        printf("%sCould not reallocate for new strides of size %d%s\n",
+               RED, new_dims, NC);
+        return;
+      }
+      y->strides = new_strides;
+    }
+    // Overwrite value pointed to by `y->widths`
+    y->widths = new_widths;
+    // Recompute strides
+    // Inner most dimension always has a stride of 1
+    y->strides[new_dims-1] = 1;
+    for (int i = new_dims-2; i >= 0; i--) {
+      y->strides[i] = new_widths[i+1] * y->strides[i+1];
+    }
+  } else {
+    printf("%sCannot reform to shape with different total number of elements: %d != %d%s\n",
+           RED, total_existing_elems, total_proposed_elems, NC);
+  }
+}
+// Resizing such that the total number of elements changes decreases is a more
+// involved adjustment
+// Eventually, it may be more time efficient to shrink by simply reinterpreting
+// the existing array (eg: keep track of start and end and shift these values
+// accordingly)
+// TODO: This function contains old code meant to shrink and/or grow an array
+void shrink_C_array(yarr *y, int *new_widths, int new_dims) {
+  // Total number of elements in existing array
+  int total_existing_elems = y->strides[0] * y->widths[0];
+  
+  // Total number of elements in resized array is the product of each width
+  int total_proposed_elems = 1;
+  for (int i = 0; i < new_dims; i++) {
+    total_proposed_elems *= new_widths[i];
+  }
+
+  if (total_existing_elems > total_proposed_elems) {
+    // If the number of elements is changed, it is necessary to realloc memory
+    // If the array is shrinking, preserve values
+    // If the array is growing, overwrite values
+    realloc_contiguous(y, total_proposed_elems);
+  } else {
+    printf("%sCannot grow array with shrink operation: %d != %d%s\n",
+           RED, total_existing_elems, total_proposed_elems, NC);
+  }
+}
 
 /* Operations
  * DONE: array()
@@ -466,8 +613,8 @@ void *grab_point(yarr *y, int *dim_list, int dim_list_size) {
     #ifdef DEBUG
     printf("%sAccess to element %d exceeds boundary of %d\n%s",
            RED, offset, total_elems, NC);
-    return NULL;
     #endif
+    return NULL;
   }
   
   #ifdef DEBUG
@@ -506,7 +653,6 @@ void print_C_array_helper(yarr *y, int depth, int offset) {
     }
   }
 }
-
 
 void print_C_array(yarr *y) {
   print_C_array_helper(y, 0, 0);
@@ -617,7 +763,7 @@ int main() {
   // Test out min and max
   #ifdef DEBUG
   printf("%sPrinting out min of two arrays:%s\n", YELLOW, NC);
-  #endif  
+  #endif
   yarr *mins = apply_pairwise_op(y, addend, MIN);
   print_C_array(mins);
 
@@ -626,6 +772,28 @@ int main() {
   #endif
   yarr *maxs = apply_pairwise_op(y, addend, MAX);
   print_C_array(maxs);
+
+  #ifdef DEBUG
+  printf("%sReform an array%s\n", YELLOW, NC);
+  printf("%sOriginal:%s\n", YELLOW, NC);
+  #endif
+  // Total number of elements in y is 24 (2*3*4)
+  print_C_array(y);
+  #ifdef DEBUG
+  printf("%s Reformed array:%s\n", YELLOW, NC);
+  #endif
+  int reformed_dims = 3;
+  int reformed_widths[3] = {2, 2, 6};
+  reform_C_array(y, reformed_widths, reformed_dims);
+  print_C_array(y);
+
+  #ifdef DEBUG
+  printf("%sReform array again:%s\n", YELLOW, NC);
+  #endif
+  reformed_dims = 2;
+  int another_reformed_widths[2] = {2, 12};
+  reform_C_array(y, another_reformed_widths, reformed_dims);
+  print_C_array(y);
   
   return 0;
 }
