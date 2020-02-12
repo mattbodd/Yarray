@@ -72,8 +72,7 @@ void realloc_contiguous(yarr *y, int total_elems) {
   switch (y->tag) {
   case INT:
     {
-      printf("Test\n");
-      int *new_idata = realloc(y->data.idata, total_elems);
+      int *new_idata = realloc(y->data.idata, total_elems*sizeof(int));
       if (new_idata == NULL) {
         printf("%sCould not reallocate space for %d ints%s\n",
                RED, total_elems, NC);
@@ -85,7 +84,7 @@ void realloc_contiguous(yarr *y, int total_elems) {
     }
   case FLOAT:
     {
-      float *new_fdata = realloc(y->data.fdata, total_elems);
+      float *new_fdata = realloc(y->data.fdata, total_elems*sizeof(float));
       if (new_fdata == NULL) {
         printf("%sCould not reallocate space for %d floats%s\n",
                RED, total_elems, NC);
@@ -97,7 +96,7 @@ void realloc_contiguous(yarr *y, int total_elems) {
     }
   case LONG:
     {
-      long *new_ldata = realloc(y->data.ldata, total_elems);
+      long *new_ldata = realloc(y->data.ldata, total_elems*sizeof(long));
       if (new_ldata == NULL) {
         printf("%sCould not reallocate space for %d longs%s\n",
                RED, total_elems, NC);
@@ -109,7 +108,7 @@ void realloc_contiguous(yarr *y, int total_elems) {
     }
   case DOUBLE:
     {
-      double *new_ddata = realloc(y->data.ddata, total_elems);
+      double *new_ddata = realloc(y->data.ddata, total_elems*sizeof(double));
       if (new_ddata == NULL) {
         printf("%sCould not reallocate space for %d doubles%s\n",
                RED, total_elems, NC);
@@ -273,7 +272,7 @@ void reform_C_array(yarr *y, int *new_widths, int new_dims) {
       // to a pointer that was allocated elsewhere
       
       // Try to make use of previously allocated memory
-      int *new_strides = realloc(y->strides, new_dims);
+      int *new_strides = realloc(y->strides, new_dims*sizeof(int));
       if (new_strides == NULL) {
         printf("%sCould not reallocate for new strides of size %d%s\n",
                RED, new_dims, NC);
@@ -299,8 +298,8 @@ void reform_C_array(yarr *y, int *new_widths, int new_dims) {
 // Eventually, it may be more time efficient to shrink by simply reinterpreting
 // the existing array (eg: keep track of start and end and shift these values
 // accordingly)
-// TODO: This function contains old code meant to shrink and/or grow an array
-void shrink_C_array(yarr *y, int *new_widths, int new_dims) {
+// TODO: Handle negative indexing
+void shrink_C_array(yarr *y, int *new_widths, int new_dims, int start, int stop) {
   // Total number of elements in existing array
   int total_existing_elems = y->strides[0] * y->widths[0];
   
@@ -310,11 +309,61 @@ void shrink_C_array(yarr *y, int *new_widths, int new_dims) {
     total_proposed_elems *= new_widths[i];
   }
 
+  if ((stop-start) != total_proposed_elems) {
+    printf("%sValues to preserve do not match total number of proposed values%s\n",
+           RED, NC);
+  }
+
+  // Ensure that values start..stop occupy the first (stop-start) values in
+  // the contiguous representation so that reallocation preserves necessary
+  // values
+  for (int i = 0; i < total_proposed_elems; i++) {
+    move_elem(y, start+i, i);
+  }
+
+  #ifdef DEBUG
+  printf("%s%p[ ", YELLOW, &y->data.idata);
+  for (int i = 0; i < total_proposed_elems; i++) {
+    printf("%d(%d) ", y->data.idata[i], i);
+  }
+  printf("]%s\n", NC);
+  #endif
+  
   if (total_existing_elems > total_proposed_elems) {
     // If the number of elements is changed, it is necessary to realloc memory
     // If the array is shrinking, preserve values
     // If the array is growing, overwrite values
     realloc_contiguous(y, total_proposed_elems);
+    // Update dims and widths
+    if (new_dims != y->dims) {
+      y->dims = new_dims;
+
+      // Try to make use of previously allocated memory
+      int *new_strides = realloc(y->strides, new_dims*sizeof(int));
+      if (new_strides == NULL) {
+        printf("%sCould not reallocate for new strides of size %d%s\n",
+               RED, new_dims, NC);
+        return;
+      }
+      y->strides = new_strides;
+    }
+
+    #ifdef DEBUG
+    printf("%s%p[ ", YELLOW, &y->data.idata);
+    for (int i = 0; i < total_proposed_elems; i++) {
+      printf("%d(%d) ", y->data.idata[i], i);
+    }
+    printf("]%s\n", NC);
+    #endif
+
+    y->widths = new_widths;
+    
+    // Recompute strides
+    // Inner most dimension always has a stride of 1
+    y->strides[new_dims-1] = 1;
+    for (int i = new_dims-2; i >= 0; i--) {
+      y->strides[i] = new_widths[i+1] * y->strides[i+1];
+    }
   } else {
     printf("%sCannot grow array with shrink operation: %d != %d%s\n",
            RED, total_existing_elems, total_proposed_elems, NC);
@@ -606,6 +655,20 @@ int main() {
   int another_reformed_widths[2] = {2, 12};
   reform_C_array(y, another_reformed_widths, reformed_dims);
   print_C_array(y);
+
+  #ifdef DEBUG
+  printf("%sShrink an array%s\n", YELLOW, NC);
+  printf(YELLOW"Original:\n"NC);
+  #endif
+  print_C_array(y);
+  #ifdef DEBUG
+  printf(YELLOW"Shrunken array:\n"NC);
+  #endif
+  int shrunken_dims = 2;
+  int shrunken_widths[2] = {2, 5};
+  shrink_C_array(y, shrunken_widths, shrunken_dims, 2, 12);
+  print_C_array(y);
+  print_yarr(y);
   
   return 0;
 }
