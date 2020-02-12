@@ -80,6 +80,34 @@ int get_int(yarr *y, int index) {
   }
 }
 
+void move_elem(yarr *y, int source, int dest) {
+  switch (y->tag) {
+  case INT:
+    #ifdef DEBUG
+    printf("%sSwapping %d(%d) with %d(%d)%s | ", YELLOW,
+           y->data.idata[dest], dest,
+           y->data.idata[source], source, NC);
+    #endif
+    y->data.idata[dest] = y->data.idata[source];
+    #ifdef DEBUG
+    printf("%sCheck after: %d%s\n", YELLOW, y->data.idata[dest], NC);
+    #endif
+    break;
+  case FLOAT:
+    y->data.fdata[dest] = y->data.fdata[source];
+    break;
+  case LONG:
+    y->data.ldata[dest] = y->data.ldata[source];
+    break;
+  case DOUBLE:
+    y->data.ddata[dest] = y->data.ddata[source];
+    break;
+  default:
+    printf("%sInvalid type associated with y->tag%s\n", RED, NC);
+    break;
+  }
+}
+
 void print_indent(int level) {
   // Indentation is a double space
   for (int i = 0; i < level*2; i++) { printf(" "); }
