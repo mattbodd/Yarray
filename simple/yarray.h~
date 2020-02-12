@@ -1,5 +1,0 @@
-// Possible primative data types of `yarr.data`
-typedef enum {INT, FLOAT, LONG, DOUBLE} dataType;
-
-struct yarr;
-typedef struct yarr yarr;
