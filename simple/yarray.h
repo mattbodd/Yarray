@@ -1,5 +1,11 @@
 #ifndef YARRAY_H
 #define YARRAY_H
+
+// DEBUG information
+#define YELLOW "\033[0;33m"
+#define RED    "\033[0;31m"
+#define NC     "\033[0m"
+
 // Possible primative data types of `yarr.data`
 typedef enum {INT, FLOAT, LONG, DOUBLE} dataType;
 typedef struct yarr yarr;
@@ -25,4 +31,6 @@ struct yarr {
     double *ddata;
   } data;
 };
+
+void dealloc_yarr(yarr *);
 #endif /* YARRAY_H */
