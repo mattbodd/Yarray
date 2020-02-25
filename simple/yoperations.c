@@ -249,6 +249,116 @@ yarr *C_array(double fill_val, dataType tag, int *widths, int dims) {
   return y;
 }
 
+// Alternate call to `C_array` which expects `in_widths` as `{#, #, ..., #}`
+yarr *_C_array(dataType tag, double fill_val, int dims, int *in_widths) {
+  int *widths = malloc(dims * sizeof(int));
+
+  memcpy(widths, in_widths, (dims * sizeof(int)));
+  
+  return C_array(fill_val, tag, widths, dims);
+}
+
+void update_point(yarr *y, double fill_val, int index) {
+  switch (y->tag) {
+  case INT:
+    y->data.idata[index] = (int) fill_val;
+    break;
+  case LONG:
+    y->data.ldata[index] = (long) fill_val;
+    break;
+  case FLOAT:
+    y->data.fdata[index] = (float) fill_val;
+    break;
+  case DOUBLE:
+    y->data.ddata[index] = fill_val;
+    break;
+  }
+}
+
+// Recursively update values in a multidimensional array given bounds for a
+// given dimension
+void update_C_array(yarr *y, double fill_val, int access_size, int *accesses) {
+  int counts[access_size/2];
+  memset(counts, 0, (access_size/2) * sizeof(int));
+  // Copy low values into counts
+  for (int i = 0; i < access_size/2; i++) {
+    counts[i] = accesses[i*2];
+  }
+
+  printf("Counts: [ ");
+  for (int i = 0; i < (access_size/2); i++) {
+    printf("%d ", counts[i]);
+  }
+  printf("]\n");
+
+  int widths[access_size/2];
+  memset(widths, 0, (access_size/2) * sizeof(int));
+  // Calculate widths
+  int tmp_width = 0;
+  for (int i = 0; i < access_size; i+=2) {
+    tmp_width = accesses[i+1] - accesses[i];
+    widths[(i/2)] = (tmp_width < 0 ? -1*tmp_width : tmp_width)+1;
+  }
+
+  printf("Widths: [ ");
+  for (int i = 0; i < (access_size/2); i++) {
+    printf("%d ", widths[i]);
+  }
+  printf("]\n");
+  
+  int strides[access_size/2];
+  memset(strides, 0, (access_size/2) * sizeof(int));
+  // Calculate strides
+  int acc_strides = 1;
+  for (int i = 0; i < access_size/2; i++) {
+    strides[(access_size/2)-i-1] = acc_strides;
+    acc_strides *= widths[(access_size/2)-i-1];
+  }
+
+  printf("Strides: [ ");
+  for (int i = 0; i < (access_size/2); i++) {
+    printf("%d ", strides[i]);
+  }
+  printf("]\n");
+
+  int total_accesses = strides[0] * widths[0];
+
+  // Index into contiguous array representation
+  int index = 0;
+  
+  int curr_dim = (access_size/2);
+  for (int i = 0; i < total_accesses; i++) {
+    curr_dim = (access_size/2);
+
+    #ifdef DEBUG
+    printf("Counts: [ ");
+    for (int j = 0; j < access_size/2; j++) {
+      printf("%d ", counts[j]);
+    }
+    printf("]\n");
+    #endif
+
+    // Determine index
+    index = 0;
+    for (int j = 0; j < access_size/2; j++) {
+      index += y->strides[j]*counts[j];
+    }
+    // Perform actual update
+    printf(YELLOW"Index: %d\n"NC, index);
+    update_point(y, fill_val, index);    
+
+    ++counts[curr_dim];
+    while (curr_dim >= 0) {
+      if (counts[curr_dim] > accesses[curr_dim*2 + 1]) {
+        counts[curr_dim] = accesses[curr_dim*2];
+        counts[--curr_dim]++;
+      } else {
+        break;
+      }
+    }
+  }
+}
+
 // Reshaping an array maintains the total number of elements and simply requires
 // readjusting strides
 // This is equivalent to Yorick `reform`
@@ -378,6 +488,15 @@ void shrink_C_array(yarr *y, int *new_widths, int new_dims, int start, int stop)
  * TODO: transpose()
  * DONE: primative pairwise operations (+, -, *, /, max, min)
  */
+
+// Operation on two-dimensional array where relationship between sizes is:
+// (m*n)(n*k)
+yarr *matrix_mul(yarr *multiplicand, yarr *multiplier) {
+  if (multiplicand->widths[1] != multiplier->widths[0]) {
+    printf(RED"Matrix dimensions are incompatible:"NC);
+    return NULL;
+  }
+}
 
 // TODO: Determine if casting should happen after operation is applied or
 // before?
@@ -627,12 +746,16 @@ int main() {
   #endif
   yarr *mins = apply_pairwise_op(y, addend, MIN);
   print_C_array(mins);
+  // Free unused memory
+  //free(mins);
 
   #ifdef DEBUG
   printf("%sPrinting out max of two arrays:%s\n", YELLOW, NC);
   #endif
   yarr *maxs = apply_pairwise_op(y, addend, MAX);
   print_C_array(maxs);
+  // Free unused memory
+  //free(maxs);
 
   #ifdef DEBUG
   printf("%sReform an array%s\n", YELLOW, NC);
@@ -669,6 +792,24 @@ int main() {
   shrink_C_array(y, shrunken_widths, shrunken_dims, 2, 12);
   print_C_array(y);
   print_yarr(y);
+
+  printf("\n");
+
+  // Test alternate invocation of `_C_array`
+  yarr *alt_y = _C_array(INT, 0, 2, (int []){4, 3});
+  print_yarr(alt_y);
+  print_C_array(alt_y);
+
+  // Perform update on array
+  update_C_array(alt_y, 1.0, 4, (int []){2,3 , 0,2});
+  print_C_array(alt_y);
+  
+  // Free unused memory
+  dealloc_yarr(augend);
+  dealloc_yarr(addend);
+  dealloc_yarr(sum);
+  free(y);
+  free(widths);
   
   return 0;
 }
