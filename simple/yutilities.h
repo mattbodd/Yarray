@@ -3,11 +3,6 @@
 
 #include "yarray.h"
 
-// DEBUG information
-#define YELLOW "\033[0;33m"
-#define RED    "\033[0;31m"
-#define NC     "\033[0m"
-
 dataType widest_dt(dataType, dataType);
 double get_double(yarr *, int);
 long get_long(yarr *, int);
