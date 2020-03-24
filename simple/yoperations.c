@@ -14,7 +14,7 @@
       _a < _b ? _a : _b; })
 
 // Possible pairwise operators
-typedef enum {ADD, SUB, MULT, DIV, MIN, MAX} pairwise_op;
+typedef enum {ADD, SUB, MUL, DIV, MIN, MAX} pairwise_op;
 
 void allocate_contiguous(yarr *y, int total_elems) {
   // Allocate space for the contiguous array
@@ -243,8 +243,12 @@ yarr *C_array(double fill_val, dataType tag, int *widths, int dims) {
     return NULL;
   }
 
-  // Initialize array
-  fill_array(y, total_elems, fill_val);
+  // Initialize array conditionally
+  // If a NULL value is passed as the `fill_val`, this indicates that an
+  // uninitialized yarr is desired
+  if (fill_val != NULL) {
+    fill_array(y, total_elems, fill_val);
+  }
 
   return y;
 }
@@ -498,6 +502,11 @@ yarr *matrix_mul(yarr *multiplicand, yarr *multiplier) {
   }
 }
 
+
+yarr *broadcast(yarr *y, double val; pairwise_op op) {
+  
+}
+
 // TODO: Determine if casting should happen after operation is applied or
 // before?
 // Generate a new `yarr` with same shape as inputs and internal values computed
@@ -569,7 +578,7 @@ yarr *apply_pairwise_op(yarr *y1, yarr *y2, pairwise_op op) {
       else if (op == SUB) {
         res->data.ddata[i] = get_double(y1,i) - get_double(y2,i);
       }
-      else if (op == MULT) {
+      else if (op == MUL) {
         res->data.ddata[i] = get_double(y1,i) * get_double(y2,i);
       }
       else if (op == DIV) {
@@ -587,7 +596,7 @@ yarr *apply_pairwise_op(yarr *y1, yarr *y2, pairwise_op op) {
       else if (op == SUB) {
         res->data.ldata[i] = get_long(y1,i) - get_long(y2,i);
       }
-      else if (op == MULT) {
+      else if (op == MUL) {
         res->data.ldata[i] = get_long(y1,i) * get_long(y2,i);
       }
       else if (op == DIV) {
@@ -605,7 +614,7 @@ yarr *apply_pairwise_op(yarr *y1, yarr *y2, pairwise_op op) {
       else if (op == SUB) {
         res->data.fdata[i] = get_float(y1,i) - get_float(y2,i);
       }
-      else if (op == MULT) {
+      else if (op == MUL) {
         res->data.fdata[i] = get_float(y1,i) * get_float(y2,i);
       }
       else if (op == DIV) {
@@ -623,7 +632,7 @@ yarr *apply_pairwise_op(yarr *y1, yarr *y2, pairwise_op op) {
       else if (op == SUB) {
         res->data.idata[i] = get_int(y1,i) - get_int(y2,i);
       }
-      else if (op == MULT) {
+      else if (op == MUL) {
         res->data.idata[i] = get_int(y1,i) * get_int(y2,i);
       }
       else if (op == DIV) {
