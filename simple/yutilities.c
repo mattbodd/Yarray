@@ -3,6 +3,15 @@
 #include "yarray.h"
 #include "yutilities.h"
 
+// Macro definitions
+#define max(a,b) ({__typeof__ (a) _a = (a);     \
+      __typeof__ (b) _b = (b);                  \
+      _a > _b ? _a : _b; })
+
+#define min(a,b) ({__typeof__ (a) _a = (a);     \
+      __typeof__ (b) _b = (b);                  \
+      _a < _b ? _a : _b; })
+
 // Function to compute the widest dataType between two yarrs
 dataType widest_dt(dataType y1_tag, dataType y2_tag) {
   // Double is the widest supported dataType
