@@ -503,8 +503,12 @@ yarr *matrix_mul(yarr *multiplicand, yarr *multiplier) {
 }
 
 
-yarr *broadcast(yarr *y, double val; pairwise_op op) {
-  
+void *broadcast(yarr *y, double val; pairwise_op op) {
+  int total_elems = y->strides[0] * y->widths[0];
+
+  for (int i = 0; i < total_elems; i++) {
+    apply_bin_op(y, i, op, get_element(y, i), (void *)val);
+  }
 }
 
 // TODO: Determine if casting should happen after operation is applied or
