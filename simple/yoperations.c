@@ -503,7 +503,7 @@ yarr *matrix_mul(yarr *multiplicand, yarr *multiplier) {
 }
 
 
-void *broadcast(yarr *y, double val; pairwise_op op) {
+void *broadcast(yarr *y, double val, pairwise_op op) {
   int total_elems = y->strides[0] * y->widths[0];
 
   for (int i = 0; i < total_elems; i++) {
@@ -511,8 +511,8 @@ void *broadcast(yarr *y, double val; pairwise_op op) {
   }
 }
 
-// TODO: Determine if casting should happen after operation is applied or
-// before?
+// DONE: Determine if casting should happen after operation is applied or
+// before? - After
 // Generate a new `yarr` with same shape as inputs and internal values computed
 // using pairwise operators defined as `op`
 yarr *apply_pairwise_op(yarr *y1, yarr *y2, pairwise_op op) {
@@ -574,80 +574,7 @@ yarr *apply_pairwise_op(yarr *y1, yarr *y2, pairwise_op op) {
   
   // Perform pairwise operation
   for (int i = 0; i < total_elems; i++) {
-    switch (res->tag) {
-    case DOUBLE:
-      if (op == ADD) {
-        res->data.ddata[i] = get_double(y1,i) + get_double(y2,i);
-      }
-      else if (op == SUB) {
-        res->data.ddata[i] = get_double(y1,i) - get_double(y2,i);
-      }
-      else if (op == MUL) {
-        res->data.ddata[i] = get_double(y1,i) * get_double(y2,i);
-      }
-      else if (op == DIV) {
-        res->data.ddata[i] = get_double(y1, i), get_double(y2, i);
-      }
-      else if (op == MAX) {
-        res->data.ddata[i] = max(get_double(y1, i), get_double(y2, i));
-      }
-      else { res->data.ddata[i] = min(get_double(y1, i), get_double(y2, i)); }
-      break;
-    case LONG:
-      if (op == ADD) {
-        res->data.ldata[i] = get_long(y1,i) + get_long(y2,i);
-      }
-      else if (op == SUB) {
-        res->data.ldata[i] = get_long(y1,i) - get_long(y2,i);
-      }
-      else if (op == MUL) {
-        res->data.ldata[i] = get_long(y1,i) * get_long(y2,i);
-      }
-      else if (op == DIV) {
-        res->data.ldata[i] = get_long(y1, i) / get_long(y2, i);
-      }
-      else if (op == MAX) {
-        res->data.ldata[i] = max(get_long(y1, i), get_long(y2, i));
-      }
-      else { res->data.ldata[i] = min(get_long(y1, i), get_long(y2, i)); }
-      break;
-    case FLOAT:
-      if (op == ADD) {
-        res->data.fdata[i] = get_float(y1,i) + get_float(y2,i);
-      }
-      else if (op == SUB) {
-        res->data.fdata[i] = get_float(y1,i) - get_float(y2,i);
-      }
-      else if (op == MUL) {
-        res->data.fdata[i] = get_float(y1,i) * get_float(y2,i);
-      }
-      else if (op == DIV) {
-        res->data.fdata[i] = get_float(y1, i) / get_float(y2, i);
-      }
-      else if (op == MAX) {
-        res->data.fdata[i] = max(get_float(y1, i), get_float(y2, i));
-      }
-      else { res->data.fdata[i] = min(get_float(y1, i), get_float(y2, i)); }
-      break;
-    case INT:
-      if (op == ADD) {
-        res->data.idata[i] = get_int(y1,i) + get_int(y2,i);
-      }
-      else if (op == SUB) {
-        res->data.idata[i] = get_int(y1,i) - get_int(y2,i);
-      }
-      else if (op == MUL) {
-        res->data.idata[i] = get_int(y1,i) * get_int(y2,i);
-      }
-      else if (op == DIV) {
-        res->data.idata[i] = get_int(y1, i) / get_int(y2, i);
-      }
-      else if (op == MAX) {
-        res->data.idata[i] = max(get_int(y1, i), get_int(y2, i));
-      }
-      else { res->data.idata[i] = min(get_int(y1, i), get_int(y2, i)); }
-      break;
-    }
+    apply_bin_op(y, i, op, get_element(y1, i), get_element(y2, i));
   }
 
   return res;
