@@ -4,6 +4,9 @@
 #include "yarray.h"
 
 dataType widest_dt(dataType, dataType);
+void update_yarr(yarr *, int, void *);
+void apply_bin_op(yarr *, void *, void *);
+void *get_element(yarr *, int);
 double get_double(yarr *, int);
 long get_long(yarr *, int);
 float get_float(yarr *, int);
