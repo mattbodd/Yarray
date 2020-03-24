@@ -14,7 +14,7 @@
       _a < _b ? _a : _b; })
 
 // Possible pairwise operators
-typedef enum {ADD, SUB, MUL, DIV, MIN, MAX} pairwise_op;
+typedef enum {ADD, SUB, MUL, DIV, MIN, MAX, POW} Op;
 
 void allocate_contiguous(yarr *y, int total_elems) {
   // Allocate space for the contiguous array
@@ -503,7 +503,7 @@ yarr *matrix_mul(yarr *multiplicand, yarr *multiplier) {
 }
 
 
-void *broadcast(yarr *y, double val, pairwise_op op) {
+void *broadcast(yarr *y, double val, Op op) {
   int total_elems = y->strides[0] * y->widths[0];
 
   for (int i = 0; i < total_elems; i++) {
@@ -515,7 +515,7 @@ void *broadcast(yarr *y, double val, pairwise_op op) {
 // before? - After
 // Generate a new `yarr` with same shape as inputs and internal values computed
 // using pairwise operators defined as `op`
-yarr *apply_pairwise_op(yarr *y1, yarr *y2, pairwise_op op) {
+yarr *apply_Op(yarr *y1, yarr *y2, Op op) {
   // Ensure that shapes are consistent
   // Start by ensuring number of dimensions is consistent
   if (y1->dims != y2->dims) {

@@ -45,7 +45,7 @@ void update_yarr(yarr *y, int index, void *val) {
 // In the cahse where `y` is a new `yarr` meant to hold the results of a pairwise
 // operation on `arg_1` and `arg_2` which are both `yarr`, `y` will have already
 // been initialized with the widest dataType as its tag form `arg_1` and `arg_2`
-void apply_bin_op(yarr *y, int index, pairwise_op op, void *arg_1, void *arg_2) {
+void apply_bin_op(yarr *y, int index, Op op, void *arg_1, void *arg_2) {
   if (y->tag == DOUBLE) {
     if (op == ADD) {
       update_yarr(y, index, (void *)((double)arg_1 + (double)arg_2));
