@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include "yarray.h"
 #include "yutilities.h"
 
@@ -59,6 +60,8 @@ void apply_bin_op(yarr *y, int index, Op op, void *arg_1, void *arg_2) {
       update_yarr(y, index, (void *)max((double)arg_1, (double)arg_2));
     } else if (op == MIN) {
       update_yarr(y, index, (void *)min((double)arg_1, (double)arg_2));
+    } else if (op == POW) {
+      update_yarr(y, index, (void *)((double)pow((double)arg_1, (double)arg_2)));
     } else {
       printf("ERROR: unexpected operation in `apply_bin_op`\n");
     }
@@ -75,6 +78,8 @@ void apply_bin_op(yarr *y, int index, Op op, void *arg_1, void *arg_2) {
       update_yarr(y, index, (void *)max((long)arg_1, (long)arg_2));
     } else if (op == MIN) {
       update_yarr(y, index, (void *)min((long)arg_1, (long)arg_2));
+    } else if (op == POW) {
+      update_yarr(y, index, (void *)((long)pow((double)arg_1, (double)arg_2)));
     } else {
       printf("ERROR: unexpected operation in `apply_bin_op`\n");
     }
@@ -91,6 +96,8 @@ void apply_bin_op(yarr *y, int index, Op op, void *arg_1, void *arg_2) {
       update_yarr(y, index, (void *)max((float)arg_1, (float)arg_2));
     } else if (op == MIN) {
       update_yarr(y, index, (void *)min((float)arg_1, (float)arg_2));
+    } else if (op == POW) {
+      update_yarr(y, index, (void *)((float)pow((double)arg_1, (double)arg_2)));        
     } else {
       printf("ERROR: unexpected operation in `apply_bin_op`\n");
     }
@@ -107,6 +114,8 @@ void apply_bin_op(yarr *y, int index, Op op, void *arg_1, void *arg_2) {
       update_yarr(y, index, (void *)max((int)arg_1, (int)arg_2));
     } else if (op == MIN) {
       update_yarr(y, index, (void *)min((int)arg_1, (int)arg_2));
+    } else if (op == POW) {
+      update_yarr(y, index, (void *)((int)pow((double)arg_1, (double)arg_2)));      
     } else {
       printf("ERROR: unexpected operation in `apply_bin_op`\n");
     }
