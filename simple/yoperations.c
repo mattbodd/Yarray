@@ -279,84 +279,73 @@ void update_point(yarr *y, double fill_val, int index) {
   }
 }
 
-// Recursively update values in a multidimensional array given bounds for a
-// given dimension
-void update_C_array(yarr *y, double fill_val, int access_size, int *accesses) {
-  int counts[access_size/2];
-  memset(counts, 0, (access_size/2) * sizeof(int));
-  // Copy low values into counts
-  for (int i = 0; i < access_size/2; i++) {
-    counts[i] = accesses[i*2];
+// Update elements in a `yarray` given bounds for each specified dimension
+// Bounds are taken as a two tuple
+// When a dimension is meant to be an observer (eg: a(:,...)), its bounds will
+// be passed as (0,-1)
+// TODO: determine if `bounds_size` will always be equivalent to `y->dims`
+// TODO: expand `bounds` to be a three tuple: (low, high, step)
+void update_C_array(yarr *y, double fill_val, int bounds_size, int *bounds) {
+  // Keep track of index within each dimension
+  int dims_index[bounds_size/2];
+  memset(dims_index, 0, (bounds_size/2) * sizeof(int));
+  // Initialize index into each dim as the lower bound for a given dim
+  for (int dim = 0; dim < bounds_size/2; dim++) {
+    dims_index[dim] = bounds[dim*2]
   }
-
-  printf("Counts: [ ");
-  for (int i = 0; i < (access_size/2); i++) {
-    printf("%d ", counts[i]);
-  }
-  printf("]\n");
-
-  int widths[access_size/2];
-  memset(widths, 0, (access_size/2) * sizeof(int));
-  // Calculate widths
-  int tmp_width = 0;
-  for (int i = 0; i < access_size; i+=2) {
-    tmp_width = accesses[i+1] - accesses[i];
-    widths[(i/2)] = (tmp_width < 0 ? -1*tmp_width : tmp_width)+1;
-  }
-
-  printf("Widths: [ ");
-  for (int i = 0; i < (access_size/2); i++) {
-    printf("%d ", widths[i]);
-  }
-  printf("]\n");
   
-  int strides[access_size/2];
-  memset(strides, 0, (access_size/2) * sizeof(int));
-  // Calculate strides
-  int acc_strides = 1;
-  for (int i = 0; i < access_size/2; i++) {
-    strides[(access_size/2)-i-1] = acc_strides;
-    acc_strides *= widths[(access_size/2)-i-1];
-  }
-
-  printf("Strides: [ ");
-  for (int i = 0; i < (access_size/2); i++) {
-    printf("%d ", strides[i]);
-  }
-  printf("]\n");
-
-  int total_accesses = strides[0] * widths[0];
-
-  // Index into contiguous array representation
-  int index = 0;
-  
-  int curr_dim = (access_size/2);
-  for (int i = 0; i < total_accesses; i++) {
-    curr_dim = (access_size/2);
-
-    #ifdef DEBUG
-    printf("Counts: [ ");
-    for (int j = 0; j < access_size/2; j++) {
-      printf("%d ", counts[j]);
+  // Determine the number of elements to update past the lower bound
+  int widths[bounds_size/2];
+  memset(widths, 0, (bounds_size/2) * sizeof(int));
+  int upper = 0;
+  for (int dim = 0; dim < (bounds_size/2); dim++) {
+    upper = bounds[(dim*2)+1];
+    // If dimension is meant to spectated over
+    if (upper == -1) {
+      upper = y->widths[dim];
     }
-    printf("]\n");
-    #endif
+    // Ensure start <= stop
+    if (start > stop) {
+      printf(YELLOW"Invalid range in `update_C_array`: %d..%d"NC,
+             dims_index[dim], upper);
+      return;
+    }
+    // Calculate width
+    widths[dim] = upper - dims_index[dim];
+  }
 
-    // Determine index
+  int total_updates = 0;
+  for (int dim = 0; dim < (bounds_size/2); dim++) {
+    total_updates += widths[dim];
+  }
+  
+  // Index into contiguous representation
+  int index = 0;
+  // Start with inner most dimension
+  int curr_dim = (bounds_size/2);
+  for (int i = 0; i < total_updates; i++) {
+    // Reset curr_dim to point to the inner most dimension
+    curr_dim = (bounds_size/2);
+
+    // Reset index
     index = 0;
-    for (int j = 0; j < access_size/2; j++) {
-      index += y->strides[j]*counts[j];
+    for (int dim = 0; dim < (bounds_size/2); dim++) {
+      index += y->strides[dim]*dims_index[dim];
     }
     // Perform actual update
-    printf(YELLOW"Index: %d\n"NC, index);
-    update_point(y, fill_val, index);    
+    update_point(y, fill_val, index); 
 
-    ++counts[curr_dim];
+    // Update the `dim_index` in the inner most dimension
+    ++dims_index[curr_dim];
+    // Increment higher dimensions if necessary
     while (curr_dim >= 0) {
-      if (counts[curr_dim] > accesses[curr_dim*2 + 1]) {
-        counts[curr_dim] = accesses[curr_dim*2];
-        counts[--curr_dim]++;
+      // If the current index exceeds the upper bound
+      if (dims_index[curr_dim] > bounds[(curr_dim*2) + 1]) {
+        dims_index[curr_dim] = bounds[curr_dim*2];
+        // Increment the index of the next highest dimension
+        dims_index[--curr_dim]++;
       } else {
+        // Stop incrementing dimension indices
         break;
       }
     }
@@ -578,6 +567,13 @@ yarr *apply_Op(yarr *y1, yarr *y2, Op op) {
   }
 
   return res;
+}
+
+// Given a list of dimensions, grab a subset of a `yarr` using specified slices
+// for each dimension
+// A slice list indicates the subset to grab for a particular dimension
+void *grab_slice(yarr *, int **slice_list, int slice_list_size) {
+  
 }
 
 // Given a list of dimensions, return reference to widest set of values
