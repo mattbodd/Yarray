@@ -6,6 +6,9 @@
 #define RED    "\033[0;31m"
 #define NC     "\033[0m"
 
+// Possible pairwise operators
+typedef enum {ADD, SUB, MUL, DIV, MIN, MAX, POW} Op;
+
 // Possible primative data types of `yarr.data`
 typedef enum {INT, FLOAT, LONG, DOUBLE} dataType;
 typedef struct yarr yarr;
@@ -32,5 +35,10 @@ struct yarr {
   } data;
 };
 
+void allocate_contiguous(yarr *, int);
+void realloc_contiguous(yarr *, int);
+void fill_array(yarr *, int, double);
+yarr *C_array(double, dataType, int *, int);
+yarr *_C_array(dataType, double, int, int *);
 void dealloc_yarr(yarr *);
 #endif /* YARRAY_H */
