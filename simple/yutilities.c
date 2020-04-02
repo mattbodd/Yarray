@@ -24,15 +24,15 @@ dataType widest_dt(dataType y1_tag, dataType y2_tag) {
 
 // Safely assume `val` can be cast to the type of `y` as this function does not
 // imply any changes to underlying dataType of `y`
-void update_yarr(yarr *y, int index, void *val) {
+void update_yarr(yarr *y, int index, yarr *val) {
   if (y->tag == DOUBLE) {
-    y->data.ddata[index] = (double)val;
+    y->data.ddata[index] = val->data.ddata[0];
   } else if (y->tag == LONG) {
-    y->data.ldata[index] = (long)val;
+    y->data.ldata[index] = val->data.ldata[0];
   } else if (y->tag == FLOAT) {
-    y->data.fdata[index] = (float)val;
+    y->data.fdata[index] = val->data.fdata[0];
   } else if (y->tag == INT) {
-    y->data.idata[index] = (int)val;
+    y->data.idata[index] = val->data.idata[0];
   } else {
     printf("ERROR: unexpected dataType in `update_yarr`\n");
   }
@@ -46,97 +46,123 @@ void update_yarr(yarr *y, int index, void *val) {
 // In the cahse where `y` is a new `yarr` meant to hold the results of a pairwise
 // operation on `arg_1` and `arg_2` which are both `yarr`, `y` will have already
 // been initialized with the widest dataType as its tag form `arg_1` and `arg_2`
-void apply_bin_op(yarr *y, int index, Op op, void *arg_1, void *arg_2) {
+void apply_bin_op(yarr *y, int index, Op op, yarr *arg_1, yarr *arg_2) {
   if (y->tag == DOUBLE) {
+    double primitive_res = 0.0;
     if (op == ADD) {
-      update_yarr(y, index, (void *)((double)arg_1 + (double)arg_2));
+      primitive_res = (arg_1->data.ddata[0] + arg_2->data.ddata[0]);
     } else if (op == SUB) {
-      update_yarr(y, index, (void *)((double)arg_1 - (double)arg_2));
+      primitive_res = (arg_1->data.ddata[0] - arg_2->data.ddata[0]);
     } else if (op == MUL) {
-      update_yarr(y, index, (void *)((double)arg_1 * (double)arg_2));
+      primitive_res = (arg_1->data.ddata[0] * arg_2->data.ddata[0]);
     } else if (op == DIV) {
-      update_yarr(y, index, (void *)((double)arg_1 / (double)arg_2));
+      primitive_res = (arg_1->data.ddata[0] / arg_2->data.ddata[0]);
     } else if (op == MAX) {
-      update_yarr(y, index, (void *)max((double)arg_1, (double)arg_2));
+      primitive_res = max(arg_1->data.ddata[0], arg_2->data.ddata[0]);
     } else if (op == MIN) {
-      update_yarr(y, index, (void *)min((double)arg_1, (double)arg_2));
+      primitive_res = min(arg_1->data.ddata[0], arg_2->data.ddata[0]);
     } else if (op == POW) {
-      update_yarr(y, index, (void *)((double)pow((double)arg_1, (double)arg_2)));
+      primitive_res = (arg_1->data.ddata[0] * arg_2->data.ddata[0]);
     } else {
       printf("ERROR: unexpected operation in `apply_bin_op`\n");
+      return;
     }
+    yarr *yarr_res = _C_array(DOUBLE, primitive_res, 1, (int []){1});
+    // Update value
+    update_yarr(y, index, yarr_res);
   } else if (y->tag == LONG) {
+    long primitive_res = 0.0;
     if (op == ADD) {
-      update_yarr(y, index, (void *)((long)arg_1 + (long)arg_2));
+      primitive_res = (arg_1->data.ldata[0] + arg_2->data.ldata[0]);
     } else if (op == SUB) {
-      update_yarr(y, index, (void *)((long)arg_1 - (long)arg_2));
+      primitive_res = (arg_1->data.ldata[0] - arg_2->data.ldata[0]);
     } else if (op == MUL) {
-      update_yarr(y, index, (void *)((long)arg_1 * (long)arg_2));
+      primitive_res = (arg_1->data.ldata[0] * arg_2->data.ldata[0]);
     } else if (op == DIV) {
-      update_yarr(y, index, (void *)((long)arg_1 / (long)arg_2));
+      primitive_res = (arg_1->data.ldata[0] / arg_2->data.ldata[0]);
     } else if (op == MAX) {
-      update_yarr(y, index, (void *)max((long)arg_1, (long)arg_2));
+      primitive_res = max(arg_1->data.ldata[0], arg_2->data.ldata[0]);
     } else if (op == MIN) {
-      update_yarr(y, index, (void *)min((long)arg_1, (long)arg_2));
+      primitive_res = min(arg_1->data.ldata[0], arg_2->data.ldata[0]);
     } else if (op == POW) {
-      update_yarr(y, index, (void *)((long)pow((double)arg_1, (double)arg_2)));
+      primitive_res = (arg_1->data.ldata[0] * arg_2->data.ldata[0]);
     } else {
       printf("ERROR: unexpected operation in `apply_bin_op`\n");
+      return;
     }
+    yarr *yarr_res = _C_array(LONG, primitive_res, 1, (int []){1});
+    // Update value
+    update_yarr(y, index, yarr_res);
   } else if (y->tag == FLOAT) {
+    float primitive_res = 0.0;
     if (op == ADD) {
-      update_yarr(y, index, (void *)((float)arg_1 + (float)arg_2));
+      primitive_res = (arg_1->data.fdata[0] + arg_2->data.fdata[0]);
     } else if (op == SUB) {
-      update_yarr(y, index, (void *)((float)arg_1 - (float)arg_2));
+      primitive_res = (arg_1->data.fdata[0] - arg_2->data.fdata[0]);
     } else if (op == MUL) {
-      update_yarr(y, index, (void *)((float)arg_1 * (float)arg_2));
+      primitive_res = (arg_1->data.fdata[0] * arg_2->data.fdata[0]);
     } else if (op == DIV) {
-      update_yarr(y, index, (void *)((float)arg_1 / (float)arg_2));
+      primitive_res = (arg_1->data.fdata[0] / arg_2->data.fdata[0]);
     } else if (op == MAX) {
-      update_yarr(y, index, (void *)max((float)arg_1, (float)arg_2));
+      primitive_res = max(arg_1->data.fdata[0], arg_2->data.fdata[0]);
     } else if (op == MIN) {
-      update_yarr(y, index, (void *)min((float)arg_1, (float)arg_2));
+      primitive_res = min(arg_1->data.fdata[0], arg_2->data.fdata[0]);
     } else if (op == POW) {
-      update_yarr(y, index, (void *)((float)pow((double)arg_1, (double)arg_2)));        
+      primitive_res = (arg_1->data.fdata[0] * arg_2->data.fdata[0]);
     } else {
       printf("ERROR: unexpected operation in `apply_bin_op`\n");
+      return;
     }
+    yarr *yarr_res = _C_array(FLOAT, primitive_res, 1, (int []){1});
+    // Update value
+    update_yarr(y, index, yarr_res);
   } else if (y->tag == INT) {
+    int primitive_res = 0;
     if (op == ADD) {
-      update_yarr(y, index, (void *)((int)arg_1 + (int)arg_2));
+      primitive_res = (arg_1->data.idata[0] + arg_2->data.idata[0]);
     } else if (op == SUB) {
-      update_yarr(y, index, (void *)((int)arg_1 - (int)arg_2));
+      primitive_res = (arg_1->data.idata[0] - arg_2->data.idata[0]);
     } else if (op == MUL) {
-      update_yarr(y, index, (void *)((int)arg_1 * (int)arg_2));
+      primitive_res = (arg_1->data.idata[0] * arg_2->data.idata[0]);
     } else if (op == DIV) {
-      update_yarr(y, index, (void *)((int)arg_1 / (int)arg_2));
+      primitive_res = (arg_1->data.idata[0] / arg_2->data.idata[0]);
     } else if (op == MAX) {
-      update_yarr(y, index, (void *)max((int)arg_1, (int)arg_2));
+      primitive_res = max(arg_1->data.idata[0], arg_2->data.idata[0]);
     } else if (op == MIN) {
-      update_yarr(y, index, (void *)min((int)arg_1, (int)arg_2));
+      primitive_res = min(arg_1->data.idata[0], arg_2->data.idata[0]);
     } else if (op == POW) {
-      update_yarr(y, index, (void *)((int)pow((double)arg_1, (double)arg_2)));      
+      primitive_res = (arg_1->data.idata[0] * arg_2->data.idata[0]);
     } else {
       printf("ERROR: unexpected operation in `apply_bin_op`\n");
+      return;
     }
+    yarr *yarr_res = _C_array(INT, primitive_res, 1, (int []){1});
+    // Update value
+    update_yarr(y, index, yarr_res);
   } else {
     printf("ERROR: unexpected dataType in `apply_bin_op`\n");
+    return;
   }
 }
 
-void *get_element(yarr *y, int index) {
+// Create and return a single member `yarr` containing the relevant value
+yarr *get_element(yarr *y, int index) {
+  // Create the single value `yarr`
+  yarr *res;
   if (y->tag == DOUBLE) {
-    return (void *)y->data.ddata[index];
+    res = _C_array(DOUBLE, y->data.ddata[index], 1, (int []){1});
   } else if (y->tag == LONG) {
-    return (void *)y->data.ldata[index];
+    res = _C_array(LONG, y->data.ldata[index], 1, (int []){1});
   } else if (y->tag == FLOAT) {
-    return (void *)y->data.fdata[index];
+    res = _C_array(FLOAT, y->data.fdata[index], 1, (int []){1});
   } else if (y->tag == INT) {
-    return (void *)y->data.idata[index];
+    res = _C_array(INT, y->data.idata[index], 1, (int []){1});
   } else {
     printf("ERROR: unexpected data type in yarray\n");
     return NULL;
   }
+
+  return res;
 }
 
 double get_double(yarr *y, int index) {
@@ -152,6 +178,10 @@ double get_double(yarr *y, int index) {
     break;
   case INT:
     return (double)y->data.idata[index];    
+    break;
+  default:
+    printf(RED"Invalid dataType detected in `get_double`"NC);
+    return -1.0;
     break;
   }
 }
@@ -170,6 +200,9 @@ long get_long(yarr *y, int index) {
   case INT:
     return (long)y->data.idata[index];    
     break;
+  default:
+    printf(RED"Invalid dataType detected in `get_long`"NC);
+    break;
   }
 }
 
@@ -187,6 +220,8 @@ float get_float(yarr *y, int index) {
   case INT:
     return (float)y->data.idata[index];    
     break;
+  default:
+    printf(RED"Invalid dataType detected in `get_float`"NC);
   }
 }
 
@@ -203,6 +238,9 @@ int get_int(yarr *y, int index) {
     break;
   case INT:
     return y->data.idata[index];    
+    break;
+  default:
+    printf(RED"Invalid dataType detected in `get_int`"NC);
     break;
   }
 }
