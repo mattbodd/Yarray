@@ -72,6 +72,7 @@ void update_C_array(yarr *y, double fill_val, int bounds_size, int *bounds) {
     total_updates *= widths[dim];
   }
 
+  #ifdef DEBUG
   printf(YELLOW"Updating %d elements, with widths:"NC, total_updates);
   for (int i = 0; i < (bounds_size/2); i++) {
     printf(YELLOW"%d "NC, widths[i]);
@@ -82,6 +83,7 @@ void update_C_array(yarr *y, double fill_val, int bounds_size, int *bounds) {
     printf(YELLOW"%d "NC, dims_index[i]);
   }
   printf("\n");
+  #endif
   
   // Index into contiguous representation
   int index = 0;
@@ -97,13 +99,10 @@ void update_C_array(yarr *y, double fill_val, int bounds_size, int *bounds) {
       index += y->strides[dim]*dims_index[dim];
     }
     // Perform actual update
-    printf(YELLOW"Updating %d\n"NC, index);
     update_point(y, fill_val, index); 
 
     // Update the `dim_index` in the inner most dimension
-    printf("dims_index[%d]: %d -> ", curr_dim, dims_index[curr_dim]);
     ++dims_index[curr_dim];
-    printf("%d\n", dims_index[curr_dim]);
     // Increment higher dimensions if necessary
     while (curr_dim >= 0) {
       // If the current index exceeds the upper bound
@@ -337,13 +336,6 @@ yarr *apply_Op(yarr *y1, yarr *y2, Op op) {
   return res;
 }
 
-// Given a list of dimensions, grab a subset of a `yarr` using specified slices
-// for each dimension
-// A slice list indicates the subset to grab for a particular dimension
-void *grab_slice(yarr *y, int **slice_list, int slice_list_size) {
-  
-}
-
 // Given a list of dimensions, return reference to widest set of values
 // Arrays in Yorick are indexed from the inner-most dimension outwards
 // eg: `a = array(1.0, 4,3,2)` creates a 2x3x4 (4 is the inner-most dimension)
@@ -508,6 +500,16 @@ int main() {
   printf("About to update array\n");
   update_C_array(alt_y, 1.0, 4, (int []){2,-1 , 0,-1});
   print_C_array(alt_y);
+
+  // Perform additional update on array
+  printf("About to update array\n");
+  update_C_array(alt_y, 2.0, 4, (int []){2,2 , 1,2});
+  print_C_array(alt_y);
+
+  // Create yarray from slice
+  printf("Creating slice\n");
+  yarr *slice = get_slice(alt_y, 4, (int[]){2,3 , 1,2});
+  print_C_array(slice);
   
   // Free unused memory
   dealloc_yarr(augend);
