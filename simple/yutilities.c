@@ -233,9 +233,9 @@ yarr *get_element(yarr *y, int index) {
   if (y->tag == DOUBLE) {
     res = _C_array(DOUBLE, y->data.ddata[index], 1, (int []){1});
   } else if (y->tag == LONG) {
-    res = _C_array(LONG, y->data.ldata[index], 1, (int []){1});
+    res = _C_array(LONG, (double)y->data.ldata[index], 1, (int []){1});
   } else if (y->tag == FLOAT) {
-    res = _C_array(FLOAT, y->data.fdata[index], 1, (int []){1});
+    res = _C_array(FLOAT, (double)y->data.fdata[index], 1, (int []){1});
   } else if (y->tag == INT) {
     res = _C_array(INT, (double)y->data.idata[index], 1, (int []){1});
   } else {
