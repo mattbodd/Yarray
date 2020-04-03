@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include "yarray.h"
 #include "yutilities.h"
 
@@ -145,6 +146,86 @@ void apply_bin_op(yarr *y, int index, Op op, yarr *arg_1, yarr *arg_2) {
   }
 }
 
+// Create and return a `yarr` with values that are a subset of a specified `yarr`
+yarr *get_slice(yarr *y, int bounds_size, int *bounds) {
+  // Keep track of index within each dimension
+  int dims_index[bounds_size/2];
+  memset(dims_index, 0, (bounds_size/2) * sizeof(int));
+  // Initialize index for each dimension to be the lower bound for a given dimension
+  for (int dim = 0; dim < bounds_size/2; dim++) {
+    // Lower bounds are even indexed values in `bounds`
+    dims_index[dim] = bounds[dim*2];
+  }
+
+  // Determine the total number of elements to grab for each dimension
+  int widths[bounds_size/2];
+  memset(widths, 0, (bounds_size/2) * sizeof(int));
+  int upper = 0;
+  for (int dim = 0; dim < (bounds_size/2); dim++) {
+    upper = bounds[(dim*2)+1];
+    // If dimension is meant to spectated over
+    if (upper == -1) {
+      upper = y->widths[dim] - 1;
+      // Overwrite -1 to be correct upper boundry
+      bounds[(dim*2)+1] = upper;
+    }
+    // Ensure start <= stop
+    if (dims_index[dim] > upper) {
+      printf(YELLOW"Invalid range in `get_slice`: %d..%d"NC,
+             dims_index[dim], upper);
+      return NULL;
+    }
+    // Calculate width
+    widths[dim] = (upper - dims_index[dim]) + 1;
+  }
+
+  // Total number of elements to hold in slice
+  int total_updates = 1;
+  for (int dim = 0; dim < (bounds_size/2); dim++) {
+    total_updates *= widths[dim];
+  }
+
+  // Create slice to return
+  yarr *slice = _C_array(y->tag, 0, bounds_size/2, widths);
+
+  // Index into original contiguous representation
+  int source_index = 0;
+  // Index into slice
+  int slice_index = 0;
+  // Start with inner most dimension
+  int curr_dim;
+  for (int i = 0; i < total_updates; i++) {
+    // Reset curr_dim to point to the inner most dimension
+    curr_dim = (bounds_size/2)-1;
+
+    // Reset index
+    source_index = 0;
+    for (int dim = 0; dim < (bounds_size/2); dim++) {
+      source_index += y->strides[dim]*dims_index[dim];
+    }
+    // Copy value
+    update_yarr(slice, slice_index, get_element(y, source_index));
+    // Increment index into slice
+    slice_index++;
+
+    // Update the `dim_index` in the inner most dimension
+    ++dims_index[curr_dim];
+    // Increment higher dimensions if necessary
+    while (curr_dim >= 0) {
+      // If the current index exceeds the upper bound
+      if (dims_index[curr_dim] > bounds[(curr_dim*2) + 1]) {
+        dims_index[curr_dim] = bounds[curr_dim*2];
+        // Increment the index of the next highest dimension
+        dims_index[--curr_dim]++;
+      } else {
+        // Stop incrementing dimension indices
+        break;
+      }
+    }
+  }
+  return slice;
+}
+
 // Create and return a single member `yarr` containing the relevant value
 yarr *get_element(yarr *y, int index) {
   // Create the single value `yarr`
@@ -156,7 +237,7 @@ yarr *get_element(yarr *y, int index) {
   } else if (y->tag == FLOAT) {
     res = _C_array(FLOAT, y->data.fdata[index], 1, (int []){1});
   } else if (y->tag == INT) {
-    res = _C_array(INT, y->data.idata[index], 1, (int []){1});
+    res = _C_array(INT, (double)y->data.idata[index], 1, (int []){1});
   } else {
     printf("ERROR: unexpected data type in yarray\n");
     return NULL;
