@@ -62,12 +62,12 @@ void update_C_array(yarr *y, double fill_val, int bounds_size, int *bounds) {
       return;
     }
     // Calculate width
-    widths[dim] = upper - dims_index[dim];
+    widths[dim] = (upper - dims_index[dim]) + 1;
   }
 
-  int total_updates = 0;
+  int total_updates = 1;
   for (int dim = 0; dim < (bounds_size/2); dim++) {
-    total_updates += widths[dim];
+    total_updates *= widths[dim];
   }
 
   printf(YELLOW"Updating %d elements, with widths:"NC, total_updates);
@@ -504,7 +504,7 @@ int main() {
 
   // Perform update on array
   printf("About to update array\n");
-  update_C_array(alt_y, 1.0, 4, (int []){2,3 , 0,2});
+  update_C_array(alt_y, 1.0, 4, (int []){2,2 , 0,2});
   print_C_array(alt_y);
   
   // Free unused memory
