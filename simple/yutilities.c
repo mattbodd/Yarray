@@ -186,7 +186,23 @@ yarr *get_slice(yarr *y, int bounds_size, int *bounds) {
   }
 
   // Create slice to return
-  yarr *slice = _C_array(y->tag, 0, bounds_size/2, widths);
+  // Eliminate outer dimensions with width of 1
+  // Eg: shape(1,1,2,3) == shape(2,3)
+  int slice_dims = (bounds_size/2);
+  for (int dim = 0; dim < bounds_size/2; dim++) {
+    if (widths[dim] == 1) {
+      slice_dims--;
+    } else {
+      break;
+    }
+  }
+  // Do not count outer-dimensions with widths of 1
+  int shrunk_widths[slice_dims];
+  for (int dim = 0; dim < slice_dims; dim++) {
+    shrunk_widths[dim] = widths[((bounds_size/2) - slice_dims) + dim];
+  }
+  // `yarray` slice to return
+  yarr *slice = _C_array(y->tag, 0, slice_dims, shrunk_widths);
 
   // Index into original contiguous representation
   int source_index = 0;
