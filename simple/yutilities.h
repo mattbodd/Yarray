@@ -6,6 +6,7 @@
 dataType widest_dt(dataType, dataType);
 void update_yarr(yarr *, int, yarr *);
 void apply_bin_op(yarr *, int, Op, yarr *, yarr *);
+yarr *get_slice(yarr *, int, int*);
 yarr *get_element(yarr *, int);
 double get_double(yarr *, int);
 long get_long(yarr *, int);
