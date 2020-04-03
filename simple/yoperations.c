@@ -53,7 +53,9 @@ void update_C_array(yarr *y, double fill_val, int bounds_size, int *bounds) {
     upper = bounds[(dim*2)+1];
     // If dimension is meant to spectated over
     if (upper == -1) {
-      upper = y->widths[dim];
+      upper = y->widths[dim] - 1;
+      // Overwrite -1 to be correct upper boundry
+      bounds[(dim*2)+1] = upper;
     }
     // Ensure start <= stop
     if (dims_index[dim] > upper) {
@@ -504,7 +506,7 @@ int main() {
 
   // Perform update on array
   printf("About to update array\n");
-  update_C_array(alt_y, 1.0, 4, (int []){2,2 , 0,2});
+  update_C_array(alt_y, 1.0, 4, (int []){2,-1 , 0,-1});
   print_C_array(alt_y);
   
   // Free unused memory
