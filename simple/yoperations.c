@@ -510,6 +510,21 @@ int main() {
   printf("Creating slice\n");
   yarr *slice = get_slice(alt_y, 4, (int[]){2,3 , 1,2});
   print_C_array(slice);
+
+  // Three dimensional yarray examples of `update_C_array` and `get_slice`
+  // Initialize three dimensional array
+  printf(YELLOW"Three dimensional array initialization\n"NC);  
+  yarr *three_dim_ex = _C_array(INT, 0, 3, (int []){5,4,3});
+  print_C_array(three_dim_ex);
+  // Update values in three dimensional array
+  printf(YELLOW"Update three dimensional array\n"NC);
+  update_C_array(three_dim_ex, 1.0, 6, (int []){2,2 , 1,2 , 0,-1});
+  print_C_array(three_dim_ex);
+  // Create slice of array and store into new array
+  printf(YELLOW"Create three dimensional slice\n"NC);
+  yarr *three_dim_slice = get_slice(three_dim_ex, 6, (int []){2,2 , 1,2 , 0,-1});
+  print_C_array(three_dim_slice);
+  print_yarr(three_dim_slice);
   
   // Free unused memory
   dealloc_yarr(augend);
