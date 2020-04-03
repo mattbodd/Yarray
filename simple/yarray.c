@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "yarray.h"
 
 void allocate_contiguous(yarr *y, int total_elems) {
@@ -221,13 +222,16 @@ yarr *C_array(double fill_val, dataType tag, int *widths, int dims) {
   // nested in that slice of the outer-most dimension; the sum off all the slices
   // represents the total number of slices (in 2D thinking: L*W)
   int total_elems = y->strides[0]*widths[0];
-
+  
   // Allocate contiguous array
   allocate_contiguous(y, total_elems);
   // Handle case where allocation fails
   if (y == 0) {
     return NULL;
   }
+
+  // Initialize array
+  fill_array(y, total_elems, fill_val);
 
   return y;
 }
@@ -237,7 +241,7 @@ yarr *_C_array(dataType tag, double fill_val, int dims, int *in_widths) {
   int *widths = malloc(dims * sizeof(int));
 
   memcpy(widths, in_widths, (dims * sizeof(int)));
-  
+
   return C_array(fill_val, tag, widths, dims);
 }
 
