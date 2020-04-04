@@ -85,7 +85,7 @@ void update_C_array(yarr *y, yarr *fill_vals, int bounds_size, int *bounds) {
     if (total_fill_vals != total_updates) {
       printf(RED"Cannot update %d elements with %d values\n"NC,
              total_updates, total_fill_vals);
-      return NULL;
+      return;
     }
   }
 
