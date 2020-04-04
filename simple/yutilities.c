@@ -437,10 +437,10 @@ void print_yarr(yarr *y) {
   char strides[sizeof(int) * y->dims + 1];
   // Longest tag name is 6 chars ("double")
   char tag[sizeof(char) * 6 + 1];
-  char data[sizeof(int) * (y->strides[0]*y->widths[0])];
+  // char data[sizeof(int) * (y->strides[0]*y->widths[0])];
   int w_pos = 0;
   int s_pos = 0;
-  int d_pos = 0;
+  // int d_pos = 0;
 
   // Populate widths and strides strings
   for (int i = 0; i < y->dims; i++) {
@@ -465,17 +465,19 @@ void print_yarr(yarr *y) {
   }
 
   // Populate data string
+  /*
   for (int i = 0; i < y->widths[0]*y->strides[0]; i++) {
     d_pos += sprintf(&data[d_pos], "%d ", y->data.idata[i]);
   }
+  */
   
   printf("%sdims:      %d\n"
          "widths:    { %s}\n"
          "strides:   { %s}\n"
-         "tag:       %s\n"
-         "data:      %s%s\n",
+         "tag:       %s%s\n",
+         //"data:      %s%s\n",
          YELLOW,
-         y->dims, widths, strides, tag, data,
+         y->dims, widths, strides, tag, //data,
          NC
          );
 }
