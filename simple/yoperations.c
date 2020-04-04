@@ -15,6 +15,12 @@
 // TODO: decide if `source_index` is necessary as `fill_val` may always be a single
 // element `yarray`
 void update_point(yarr *y, int dest_index, yarr *fill_val, int source_index) {
+  // Ensure that `y` and `fill_val` are of the same dataType
+  if (y->tag != fill_val->tag) {
+    printf(RED"`yarray` to update and `fill_val` must be of same dataType in `update_point`\n"NC);
+    return;
+  }
+  
   if (y->tag == INT) {
     y->data.idata[dest_index] = fill_val->data.idata[source_index];
   } else if (y->tag == LONG) {
