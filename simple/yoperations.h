@@ -4,7 +4,7 @@
 #include "yarray.h"
 #include "yutilities.h"
 
-void update_point(yarr *, yarr *, int);
+void update_point(yarr *, int, yarr *, int);
 void update_C_array(yarr *, yarr *, int, int *);
 void reform_C_array(yarr *, int *, int);
 void shrink_C_array(yarr *, int *, int, int, int);
