@@ -390,6 +390,20 @@ void print_indent(int level) {
   for (int i = 0; i < level*2; i++) { printf(" "); }
 }
 
+void print_element(yarr *y, int index) {
+  if (y->tag == INT) {
+    printf("%d", y->data.idata[index]);
+  } else if (y->tag == LONG) {
+    printf("%ld", y->data.ldata[index]);
+  } else if (y->tag == FLOAT) {
+    printf("%f", y->data.fdata[index]);
+  } else if (y->tag == DOUBLE) {
+    printf("%f", y->data.ddata[index]);
+  } else {
+    printf(RED"Unrecognized dataType in `print_element\n"NC);
+  }
+}
+
 void print_C_array_helper(yarr *y, int depth, int offset) {
   for (int i = 0; i < y->widths[depth]; i++) {
     if (depth < (y->dims-1)) {
@@ -407,7 +421,7 @@ void print_C_array_helper(yarr *y, int depth, int offset) {
       if (depth+1 < y->dims-1) { print_indent(depth); }
       printf("}\n");
     } else {
-      printf("%d", y->data.idata[offset+i]);
+      print_element(y, offset+i);
       // Append ", " for each inner-most element that is not the final element
       if (i < y->widths[depth]-1) { printf(", "); }
     }
