@@ -23,6 +23,20 @@ dataType widest_dt(dataType y1_tag, dataType y2_tag) {
   else                                           { return INT; }
 }
 
+yarr *copy_yarray(yarr *original) {
+  // Create a list of widths where each width is (0,-1) - the entire dimension
+  int widths[original->dims * 2];
+  for (int dim = 0; dim < original->dims; dim++) {
+    // Every even value (lower bound) is 0
+    widths[dim*2] = 0;
+    // Every odd value (upper bound) is -1
+    widths[dim*2 + 1] = -1;
+  }
+  yarr *copy = get_slice(original, original->dims * 2, widths);
+
+  return copy;
+}
+
 // Safely assume `val` can be cast to the type of `y` as this function does not
 // imply any changes to underlying dataType of `y`
 void update_yarr(yarr *y, int index, yarr *val) {
@@ -63,6 +77,7 @@ void apply_bin_op(yarr *y, int index, Op op, yarr *arg_1, yarr *arg_2) {
     } else if (op == MIN) {
       primitive_res = min(arg_1->data.ddata[0], arg_2->data.ddata[0]);
     } else if (op == POW) {
+      // TODO: Fix POW implementation
       primitive_res = (arg_1->data.ddata[0] * arg_2->data.ddata[0]);
     } else {
       printf("ERROR: unexpected operation in `apply_bin_op`\n");
