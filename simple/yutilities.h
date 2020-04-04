@@ -4,6 +4,7 @@
 #include "yarray.h"
 
 dataType widest_dt(dataType, dataType);
+yarr *copy_yarray(yarr *);
 void update_yarr(yarr *, int, yarr *);
 void apply_bin_op(yarr *, int, Op, yarr *, yarr *);
 yarr *get_slice(yarr *, int, int*);
