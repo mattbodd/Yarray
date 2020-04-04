@@ -12,20 +12,19 @@
       __typeof__ (b) _b = (b);                  \
       _a < _b ? _a : _b; })
 
-void update_point(yarr *y, double fill_val, int index) {
-  switch (y->tag) {
-  case INT:
-    y->data.idata[index] = (int) fill_val;
-    break;
-  case LONG:
-    y->data.ldata[index] = (long) fill_val;
-    break;
-  case FLOAT:
-    y->data.fdata[index] = (float) fill_val;
-    break;
-  case DOUBLE:
-    y->data.ddata[index] = fill_val;
-    break;
+// TODO: decide if `source_index` is necessary as `fill_val` may always be a single
+// element `yarray`
+void update_point(yarr *y, int dest_index, yarr *fill_val, int source_index) {
+  if (y->tag == INT) {
+    y->data.idata[dest_index] = fill_val->data.idata[source_index];
+  } else if (y->tag == LONG) {
+    y->data.ldata[dest_index] = fill_val->data.ldata[source_index];
+  } else if (y->tag == FLOAT) {
+    y->data.fdata[dest_index] = fill_val->data.fdata[source_index];
+  } else if (y->tag == DOUBLE) {
+    y->data.ddata[dest_index] = fill_val->data.ddata[source_index];
+  } else {
+    printf(RED"Invalid dataType recieved in `update_point\n`"NC);
   }
 }
 
@@ -114,7 +113,8 @@ void update_C_array(yarr *y, yarr *fill_vals, int bounds_size, int *bounds) {
       index += y->strides[dim]*dims_index[dim];
     }
     // Perform actual update
-    update_point(y, get_element(fill_vals, fill_index), index);
+    // `get_element` will always return a single elemenet `yarray`
+    update_point(y, index, get_element(fill_vals, fill_index), 0);
     // Conditionally update `fill_index`
     if (total_fill_vals > 1) {
       fill_index++;
