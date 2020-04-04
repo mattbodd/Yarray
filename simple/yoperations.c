@@ -266,8 +266,8 @@ void shrink_C_array(yarr *y, int *new_widths, int new_dims, int start, int stop)
 
 /* Operations
  * DONE: array()
- * TODO: indexing of various kinds
- * TODO: matrixMult()
+ * DONE: indexing of various kinds
+ * DONE: matrixMult()
  * DONE: max() & min()
  * TODO: transpose()
  * DONE: primative pairwise operations (+, -, *, /, max, min)
@@ -275,11 +275,30 @@ void shrink_C_array(yarr *y, int *new_widths, int new_dims, int start, int stop)
 
 // Operation on two-dimensional array where relationship between sizes is:
 // (m*n)(n*k)
-yarr *matrix_mul(yarr *multiplicand, yarr *multiplier) {
-  if (multiplicand->widths[1] != multiplier->widths[0]) {
-    printf(RED"Matrix dimensions are incompatible:"NC);
-    return NULL;
+// NOTE: can currently only support multiplcation of up to one dimensional array
+// as this is all that is required of Pos5
+// NOTE: only supporting multiplication of doubles as that is all that is required
+// of Pos5
+double matrix_mult(yarr *multiplicand, yarr *multiplier) {
+  // Ensure computation can be handled
+  if (multiplicand->dims > 1 || multiplier->dims > 1) {
+    printf(RED"Cannot currently handle matrix multiplication of `yarray`s greater than one dimension\n"NC);
+    return;
   }
+  // Ensure `yarray`s are compatible
+  if (multiplicand->widths[0] != multiplier->widths[0]) {
+    printf(RED"Dimensions of %d and %d are incompatible for matrix multiplication\n"NC,
+           multiplicand->widths[0], multiplier->widths[0]);
+    return;
+  }
+  // Ensure `yarray`s are of type DOUBLE as that is all that is currently supported
+  // Perform operation
+  double sum = 0;
+  for (int i = 0; i < multiplicand->widths[0]; i++) {
+    sum += multiplicand->data.ddata[i] * multiplier->data.ddata[i];
+  }
+
+  return sum;
 }
 
 
