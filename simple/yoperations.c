@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "yarray.h"
-#include "yutilities.h"
+#include "yoperations.h"
 
 // Macro definitions
 #define max(a,b) ({__typeof__ (a) _a = (a);     \
@@ -36,7 +35,7 @@ void update_point(yarr *y, double fill_val, int index) {
 // be passed as (0,-1)
 // TODO: determine if `bounds_size` will always be equivalent to `y->dims`
 // TODO: expand `bounds` to be a three tuple: (low, high, step)
-void update_C_array(yarr *y, double fill_val, int bounds_size, int *bounds) {
+void update_C_array(yarr *y, yarr *fill_vals, int bounds_size, int *bounds) {  
   // Keep track of index within each dimension
   int dims_index[bounds_size/2];
   memset(dims_index, 0, (bounds_size/2) * sizeof(int));
@@ -72,6 +71,19 @@ void update_C_array(yarr *y, double fill_val, int bounds_size, int *bounds) {
     total_updates *= widths[dim];
   }
 
+  // Determine if `fill_vals` is a single value or some number of elements
+  // which is equal to the number of elements being updated
+  int total_fill_vals = fill_vals->strides[0] * fill_vals->widths[0];
+  if (total_fill_vals != 1) {
+    // Ensure that the number of values to update is equal to the number of
+    // fill values
+    if (total_fill_vals != total_updates) {
+      printf(RED"Cannot update %d elements with %d values\n"NC,
+             total_updates, total_fill_vals);
+      return NULL;
+    }
+  }
+
   #ifdef DEBUG
   printf(YELLOW"Updating %d elements, with widths:"NC, total_updates);
   for (int i = 0; i < (bounds_size/2); i++) {
@@ -87,8 +99,11 @@ void update_C_array(yarr *y, double fill_val, int bounds_size, int *bounds) {
   
   // Index into contiguous representation
   int index = 0;
+  // Index to track which fill value to use
+  int fill_index = 0;
   // Start with inner most dimension
   int curr_dim;
+  
   for (int i = 0; i < total_updates; i++) {
     // Reset curr_dim to point to the inner most dimension
     curr_dim = (bounds_size/2)-1;
@@ -99,7 +114,11 @@ void update_C_array(yarr *y, double fill_val, int bounds_size, int *bounds) {
       index += y->strides[dim]*dims_index[dim];
     }
     // Perform actual update
-    update_point(y, fill_val, index); 
+    update_point(y, get_element(fill_vals, fill_index), index);
+    // Conditionally update `fill_index`
+    if (total_fill_vals > 1) {
+      fill_index++;
+    }
 
     // Update the `dim_index` in the inner most dimension
     ++dims_index[curr_dim];
@@ -258,13 +277,16 @@ yarr *matrix_mul(yarr *multiplicand, yarr *multiplier) {
 }
 
 
-void broadcast(yarr *y, yarr *val, Op op) {
+yarr *broadcast(yarr *y, yarr *val, Op op) {
+  yarr *copy = copy_yarray(y);
+  
   int total_elems = y->strides[0] * y->widths[0];
-
   
   for (int i = 0; i < total_elems; i++) {
-    apply_bin_op(y, i, op, get_element(y, i), get_element(val, 0));
+    apply_bin_op(copy, i, op, get_element(y, i), get_element(val, 0));
   }
+
+  return copy;
 }
 
 // DONE: Determine if casting should happen after operation is applied or
@@ -382,6 +404,7 @@ void *grab_point(yarr *y, int *dim_list, int dim_list_size) {
   return (int *)(y->data.idata + offset);
 }
 
+/*
 int main() {
   int dims = 3;
   int *widths = malloc(dims * sizeof(int));
@@ -535,3 +558,4 @@ int main() {
   
   return 0;
 }
+*/
