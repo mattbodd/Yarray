@@ -53,6 +53,43 @@ void update_yarr(yarr *y, int index, yarr *val) {
   }
 }
 
+// Compare (greater than, less than, equal to) elements of `yarray`s
+// Comparison returns -1 if left argument is greater
+//                     1 if right argument is greater
+//                     0 if arguments are equal
+int compare_element(yarr *arg1, int arg1_index, yarr *arg2, int arg2_index) {
+  // Ensure dataTypes of both arguments match
+  if (y->tag == DOUBLE) {
+    if (y->data.ddata[arg1_index] > y->data.ddata[arg2_index]) {
+      return -1;
+    } else if (y->data.ddata[arg1_index] < y->data.ddata[arg2_index]) {
+      return 1;
+    }
+  } else if (y->tag == LONG) {
+    if (y->data.ldata[arg1_index] > y->data.ldata[arg2_index]) {
+      return -1;
+    } else if (y->data.ldata[arg1_index] < y->data.ldata[arg2_index]) {
+      return 1;
+    }
+  } else if (y->tag == FLOAT) {
+    if (y->data.fdata[arg1_index] > y->data.fdata[arg2_index]) {
+      return -1;
+    } else if (y->data.fdata[arg1_index] < y->data.fdata[arg2_index]) {
+      return 1;
+    }
+  } else if (y->tag == INT) {
+    if (y->data.idata[arg1_index] > y->data.idata[arg2_index]) {
+      return -1;
+    } else if (y->data.idata[arg1_index] < y->data.idata[arg2_index]) {
+      return 1;
+    }
+  } else {
+    print(RED"ERROR: unexpected dataType in `compare_element`\n"NC)
+  }
+  // dataTypes are compatible and elements are equal
+  return 0;
+}
+
 // Safely assume the widest dataType between `arg_1` and `arg_2` is the `tag`
 // of `y`
 // In the case where `y` is a `yarr` containing `arg_1`, and `arg_2` is a
