@@ -301,6 +301,21 @@ double matrix_mult(yarr *multiplicand, yarr *multiplier) {
   return sum;
 }
 
+yarr *transpose(yarr *y) {
+  // Ensure transposition can be handled
+  if (y->dims > 1) {
+    printf(RED"Cannot currently handle transposition of `yarray`s greater than one dimension\n"NC);
+    return;
+  }
+
+  yarr *transposed = copy_yarray(y);
+  // Perform operation
+  for (int i = 0; i < y->widths[0]; i++) {
+    update_point(transposed, i, y, y->widths[0]-i-1);
+  }
+
+  return transposed;
+}
 
 yarr *broadcast(yarr *y, yarr *val, Op op) {
   yarr *copy = copy_yarray(y);
@@ -312,6 +327,27 @@ yarr *broadcast(yarr *y, yarr *val, Op op) {
   }
 
   return copy;
+}
+
+// Find largest element in a given `yarray`
+yarr *max_element(yarr *y) {
+  int total_elements = y->strides[0] * y->widths[0];
+
+  int max_index = 0;
+  int comparison = 0;
+  for (int i = 0; i < total_elements; i++) {
+    if (i != max_index) {
+      // Comparison returns -1 if left argument is greater
+      //                     1 if right argument is greater
+      //                     0 if arguments are equal
+      comparison = compare_element(get_element(y, i), get_element(y, max_index));
+      if (comparison == -1) {
+        max_index = i;
+      }
+    }
+  }
+
+  return get_element(y, max_index);
 }
 
 // DONE: Determine if casting should happen after operation is applied or
